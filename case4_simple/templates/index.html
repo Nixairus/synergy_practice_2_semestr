@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}Главная - Система управления задачами{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Заголовок -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="bi bi-house text-primary"></i> Главная панель</h1>
+                <p class="text-muted mb-0">Добро пожаловать в систему управления задачами</p>
+            </div>
+            <div>
+                <a href="{{ url_for('add_task') }}" class="btn btn-primary btn-lg">
+                    <i class="bi bi-plus-circle"></i> Новая задача
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Статистика -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-list-check display-4 mb-2"></i>
+                <h3 class="card-title">{{ stats.total }}</h3>
+                <p class="card-text">Всего задач</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-warning text-dark h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-clock display-4 mb-2"></i>
+                <h3 class="card-title">{{ stats.todo }}</h3>
+                <p class="card-text">К выполнению</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-info text-white h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-gear display-4 mb-2"></i>
+                <h3 class="card-title">{{ stats.in_progress }}</h3>
+                <p class="card-text">В работе</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-check-circle display-4 mb-2"></i>
+                <h3 class="card-title">{{ stats.completed }}</h3>
+                <p class="card-text">Завершено</p>
+                <small>{{ stats.completion_rate }}% от общего числа</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Быстрые действия -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-lightning"></i> Быстрые действия</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('add_task') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-plus"></i> Добавить задачу
+                    </a>
+                    <a href="{{ url_for('tasks') }}?status=todo" class="btn btn-outline-warning">
+                        <i class="bi bi-list"></i> Задачи к выполнению
+                    </a>
+                    <a href="{{ url_for('tasks') }}?priority=high" class="btn btn-outline-danger">
+                        <i class="bi bi-exclamation-triangle"></i> Высокий приоритет
+                    </a>
+                    <a href="/api/tasks" target="_blank" class="btn btn-outline-info">
+                        <i class="bi bi-code-slash"></i> API JSON
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Последние задачи -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-list-task"></i> Последние задачи</h5>
+                <a href="{{ url_for('tasks') }}" class="btn btn-sm btn-outline-primary">
+                    Показать все <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+            <div class="card-body">
+                {% if tasks %}
+                    <div class="row">
+                        {% for task in tasks[:6] %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card card-hover priority-{{ task.priority }} {{ 'status-done' if task.status == 'done' else '' }}">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="card-title mb-0">{{ task.title }}</h6>
+                                        
+                                        <!-- Приоритет -->
+                                        {% if task.priority == 'high' %}
+                                            <span class="badge bg-danger">Высокий</span>
+                                        {% elif task.priority == 'medium' %}
+                                            <span class="badge bg-warning text-dark">Средний</span>
+                                        {% else %}
+                                            <span class="badge bg-success">Низкий</span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Описание -->
+                                    {% if task.description %}
+                                        <p class="card-text small text-muted">
+                                            {{ task.description[:50] }}{% if task.description|length > 50 %}...{% endif %}
+                                        </p>
+                                    {% endif %}
+                                    
+                                    <!-- Статус -->
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        {% if task.status == 'todo' %}
+                                            <span class="badge bg-secondary">К выполнению</span>
+                                        {% elif task.status == 'in_progress' %}
+                                            <span class="badge bg-info">В работе</span>
+                                        {% elif task.status == 'done' %}
+                                            <span class="badge bg-success">Выполнено</span>
+                                        {% endif %}
+                                        
+                                        <!-- Быстрые действия -->
+                                        <div class="btn-group btn-group-sm">
+                                            {% if task.status != 'done' %}
+                                                <form method="POST" action="{{ url_for('toggle_task', task_id=task.id) }}" style="display: inline;">
+                                                    <button type="submit" class="btn btn-outline-success btn-sm" title="Отметить как выполненную">
+                                                        <i class="bi bi-check"></i>
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                            
+                                            <a href="{{ url_for('edit_task', task_id=task.id) }}" class="btn btn-outline-primary btn-sm" title="Редактировать">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Дата создания -->
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar"></i> {{ task.created_at[:10] }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-inbox display-1 text-muted"></i>
+                        <h4 class="text-muted mt-3">Пока нет задач</h4>
+                        <p class="text-muted">Создайте первую задачу, чтобы начать работу</p>
+                        <a href="{{ url_for('add_task') }}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Создать задачу
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Информационный блок -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="bi bi-info-circle"></i> Информация о проекте</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Возможности системы:</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check text-success"></i> Создание и редактирование задач</li>
+                            <li><i class="bi bi-check text-success"></i> Установка приоритетов и статусов</li>
+                            <li><i class="bi bi-check text-success"></i> Фильтрация и поиск задач</li>
+                            <li><i class="bi bi-check text-success"></i> REST API для интеграции</li>
+                            <li><i class="bi bi-check text-success"></i> Статистика и аналитика</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Технические особенности:</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-gear text-primary"></i> Python Flask Framework</li>
+                            <li><i class="bi bi-database text-primary"></i> SQLite база данных</li>
+                            <li><i class="bi bi-palette text-primary"></i> Bootstrap 5 UI</li>
+                            <li><i class="bi bi-phone text-primary"></i> Адаптивный дизайн</li>
+                            <li><i class="bi bi-code-slash text-primary"></i> RESTful API</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Автообновление статистики каждые 30 секунд
+setInterval(function() {
+    fetch('/api/stats')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Статистика обновлена:', data);
+            // Можно обновить элементы на странице без перезагрузки
+        })
+        .catch(error => console.log('Ошибка получения статистики:', error));
+}, 30000);
+
+// Анимация для карточек статистики
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.stats-card, .bg-warning, .bg-info, .bg-success');
+    cards.forEach((card, index) => {
+        setTimeout(() => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                card.style.transition = 'all 0.5s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 100);
+        }, index * 100);
+    });
+});
+</script>
+{% endblock %} 

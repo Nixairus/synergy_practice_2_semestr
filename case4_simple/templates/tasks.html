@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}Все задачи - Система управления задачами{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Заголовок и кнопка добавления -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="bi bi-list-task text-primary"></i> Все задачи</h1>
+                <p class="text-muted mb-0">Управление и фильтрация задач</p>
+            </div>
+            <div>
+                <a href="{{ url_for('add_task') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Новая задача
+                </a>
+            </div>
+        </div>
+
+        <!-- Фильтры -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-funnel"></i> Фильтры</h6>
+            </div>
+            <div class="card-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="status" class="form-label">Статус</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">Все статусы</option>
+                            <option value="todo" {{ 'selected' if current_status == 'todo' else '' }}>К выполнению</option>
+                            <option value="in_progress" {{ 'selected' if current_status == 'in_progress' else '' }}>В работе</option>
+                            <option value="done" {{ 'selected' if current_status == 'done' else '' }}>Выполнено</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="priority" class="form-label">Приоритет</label>
+                        <select class="form-select" id="priority" name="priority">
+                            <option value="">Все приоритеты</option>
+                            <option value="high" {{ 'selected' if current_priority == 'high' else '' }}>Высокий</option>
+                            <option value="medium" {{ 'selected' if current_priority == 'medium' else '' }}>Средний</option>
+                            <option value="low" {{ 'selected' if current_priority == 'low' else '' }}>Низкий</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-outline-primary me-2">
+                            <i class="bi bi-search"></i> Применить
+                        </button>
+                        <a href="{{ url_for('tasks') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Сбросить
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Быстрые фильтры -->
+        <div class="mb-3">
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('tasks') }}" class="btn btn-outline-secondary {{ 'active' if not current_status and not current_priority else '' }}">
+                    Все ({{ tasks|length }})
+                </a>
+                <a href="{{ url_for('tasks') }}?status=todo" class="btn btn-outline-warning {{ 'active' if current_status == 'todo' else '' }}">
+                    К выполнению
+                </a>
+                <a href="{{ url_for('tasks') }}?status=in_progress" class="btn btn-outline-info {{ 'active' if current_status == 'in_progress' else '' }}">
+                    В работе
+                </a>
+                <a href="{{ url_for('tasks') }}?status=done" class="btn btn-outline-success {{ 'active' if current_status == 'done' else '' }}">
+                    Завершенные
+                </a>
+                <a href="{{ url_for('tasks') }}?priority=high" class="btn btn-outline-danger {{ 'active' if current_priority == 'high' else '' }}">
+                    Высокий приоритет
+                </a>
+            </div>
+        </div>
+
+        <!-- Список задач -->
+        {% if tasks %}
+            <div class="row">
+                {% for task in tasks %}
+                <div class="col-lg-6 col-xl-4 mb-3">
+                    <div class="card card-hover priority-{{ task.priority }} {{ 'status-done' if task.status == 'done' else '' }}">
+                        <div class="card-body">
+                            <!-- Заголовок и приоритет -->
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="card-title mb-0">{{ task.title }}</h6>
+                                {% if task.priority == 'high' %}
+                                    <span class="badge bg-danger">Высокий</span>
+                                {% elif task.priority == 'medium' %}
+                                    <span class="badge bg-warning text-dark">Средний</span>
+                                {% else %}
+                                    <span class="badge bg-success">Низкий</span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Описание -->
+                            {% if task.description %}
+                                <p class="card-text small text-muted mb-2">
+                                    {{ task.description[:80] }}{% if task.description|length > 80 %}...{% endif %}
+                                </p>
+                            {% endif %}
+
+                            <!-- Статус и дата -->
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                {% if task.status == 'todo' %}
+                                    <span class="badge bg-secondary">К выполнению</span>
+                                {% elif task.status == 'in_progress' %}
+                                    <span class="badge bg-info">В работе</span>
+                                {% elif task.status == 'done' %}
+                                    <span class="badge bg-success">Выполнено</span>
+                                {% endif %}
+                                
+                                <small class="text-muted">
+                                    {{ task.created_at[:10] }}
+                                </small>
+                            </div>
+
+                            <!-- Кнопки действий -->
+                            <div class="d-flex justify-content-between">
+                                <div class="btn-group btn-group-sm">
+                                    {% if task.status != 'done' %}
+                                        <form method="POST" action="{{ url_for('toggle_task', task_id=task.id) }}" style="display: inline;">
+                                            <button type="submit" class="btn btn-outline-success" title="Отметить как выполненную">
+                                                <i class="bi bi-check"></i>
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                    
+                                    <a href="{{ url_for('edit_task', task_id=task.id) }}" class="btn btn-outline-primary" title="Редактировать">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </div>
+                                
+                                <form method="POST" action="{{ url_for('delete_task', task_id=task.id) }}" style="display: inline;" 
+                                      onsubmit="return confirm('Удалить задачу {{ task.title }}?')">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" title="Удалить">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- Пустое состояние -->
+            <div class="text-center py-5">
+                <i class="bi bi-search display-1 text-muted"></i>
+                <h4 class="text-muted mt-3">Задачи не найдены</h4>
+                {% if current_status or current_priority %}
+                    <p class="text-muted">Попробуйте изменить фильтры или создать новую задачу</p>
+                    <a href="{{ url_for('tasks') }}" class="btn btn-outline-secondary me-2">
+                        <i class="bi bi-x-circle"></i> Сбросить фильтры
+                    </a>
+                {% else %}
+                    <p class="text-muted">Создайте первую задачу, чтобы начать работу</p>
+                {% endif %}
+                <a href="{{ url_for('add_task') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Создать задачу
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- API информация -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="bi bi-code-slash"></i> API Endpoints</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Доступные API:</h6>
+                        <ul class="list-unstyled">
+                            <li><code>GET /api/tasks</code> - получить все задачи</li>
+                            <li><code>POST /api/tasks</code> - создать задачу</li>
+                            <li><code>PUT /api/tasks/{id}</code> - обновить задачу</li>
+                            <li><code>DELETE /api/tasks/{id}</code> - удалить задачу</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Быстрые ссылки:</h6>
+                        <a href="/api/tasks" target="_blank" class="btn btn-sm btn-outline-primary me-2">
+                            <i class="bi bi-eye"></i> JSON данные
+                        </a>
+                        <a href="/api/stats" target="_blank" class="btn btn-sm btn-outline-info">
+                            <i class="bi bi-graph-up"></i> Статистика
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Быстрое переключение статуса задачи
+function quickToggle(taskId) {
+    fetch('/api/tasks/' + taskId, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            status: 'done'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Статус обновлен:', data);
+        location.reload();
+    })
+    .catch(error => console.error('Ошибка:', error));
+}
+
+// Базовая инициализация
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Страница задач загружена');
+});
+</script>
+{% endblock %} 

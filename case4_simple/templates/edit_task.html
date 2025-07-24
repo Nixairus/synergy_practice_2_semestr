@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Редактировать задачу - {{ task.title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="bi bi-pencil text-primary"></i> 
+                    Редактировать задачу
+                </h4>
+                <small class="text-muted">ID: {{ task.id }} | Создана: {{ task.created_at[:10] }}</small>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <!-- Название задачи -->
+                    <div class="mb-3">
+                        <label for="title" class="form-label">
+                            <i class="bi bi-text-left"></i> Название задачи *
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="title" 
+                               name="title" 
+                               value="{{ task.title }}"
+                               required 
+                               maxlength="200">
+                    </div>
+
+                    <!-- Описание -->
+                    <div class="mb-3">
+                        <label for="description" class="form-label">
+                            <i class="bi bi-text-paragraph"></i> Описание
+                        </label>
+                        <textarea class="form-control" 
+                                  id="description" 
+                                  name="description" 
+                                  rows="4">{{ task.description or '' }}</textarea>
+                    </div>
+
+                    <!-- Приоритет -->
+                    <div class="mb-3">
+                        <label for="priority" class="form-label">
+                            <i class="bi bi-exclamation-triangle"></i> Приоритет
+                        </label>
+                        <select class="form-select" id="priority" name="priority">
+                            <option value="low" {{ 'selected' if task.priority == 'low' else '' }}>
+                                Низкий приоритет
+                            </option>
+                            <option value="medium" {{ 'selected' if task.priority == 'medium' else '' }}>
+                                Средний приоритет
+                            </option>
+                            <option value="high" {{ 'selected' if task.priority == 'high' else '' }}>
+                                Высокий приоритет
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Статус -->
+                    <div class="mb-3">
+                        <label for="status" class="form-label">
+                            <i class="bi bi-flag"></i> Статус
+                        </label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="todo" {{ 'selected' if task.status == 'todo' else '' }}>
+                                К выполнению
+                            </option>
+                            <option value="in_progress" {{ 'selected' if task.status == 'in_progress' else '' }}>
+                                В работе
+                            </option>
+                            <option value="done" {{ 'selected' if task.status == 'done' else '' }}>
+                                Выполнено
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Кнопки -->
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Назад
+                            </a>
+                        </div>
+                        <div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Сохранить изменения
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Опасная зона -->
+        <div class="card mt-4 border-danger">
+            <div class="card-header bg-danger text-white">
+                <h6 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Опасные действия</h6>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Удаление задачи необратимо. Все данные будут потеряны.</p>
+                <form method="POST" action="{{ url_for('delete_task', task_id=task.id) }}" onsubmit="return confirm('Вы уверены, что хотите удалить эту задачу?')">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Удалить задачу
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
